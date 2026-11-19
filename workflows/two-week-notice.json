@@ -1,0 +1,237 @@
+{
+  "name": "２週間前通知",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "triggerAtHour": 9
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [
+        -128,
+        16
+      ],
+      "id": "efff2612-5f73-4c17-b016-e1603a60a12a",
+      "name": "9時に実行"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_TASK_DB_ID",
+          "mode": "list",
+          "cachedResultName": "作業詳細 ",
+          "cachedResultUrl": "https://www.notion.so/NOTION_TASK_DB_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        80,
+        16
+      ],
+      "id": "b46b9631-5a41-4297-9c05-959ac11499b9",
+      "name": "記事情報を取得",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "572ff2d8-ddf4-4243-b0b0-f1a616075abf",
+              "name": "=Title",
+              "value": "={{ $json.properties.タイトル.title[0].plain_text }}",
+              "type": "string"
+            },
+            {
+              "id": "983b983b-874f-4c75-a65b-b72fd1117814",
+              "name": "DueDate",
+              "value": "={{ $json.properties.投稿予定日.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "c4492742-e955-48be-8895-538619e8008d",
+              "name": "Group",
+              "value": "={{ $json.properties['担当グループ'].select.name }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        256,
+        16
+      ],
+      "id": "0f073783-9cd3-47cf-a2b7-128442eb725a",
+      "name": "扱いやすくする"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n  const dueDateStr = item.json.DueDate;\n  if (!dueDateStr) {\n    item.json.isTarget = false;\n    continue;\n  }\n  \n  const today = new Date();\n  today.setHours(0, 0, 0, 0);\n  const fourteenDaysLater = new Date(today);\n  fourteenDaysLater.setDate(today.getDate() + 14);\n  \n  const targetStr = new Date(dueDateStr).toISOString().split('T')[0];\n  const target14Str = fourteenDaysLater.toISOString().split('T')[0];\n  \n  // ここを修正：オブジェクトの中の .name を見るように変更\n  const statusName = item.json.Status_Content?.name || \"\"; \n  \n  // 「作業前」または「空白」を対象にするならこう\n  const isPending = (statusName === \"作業前\" || statusName === \"\");\n  \n  item.json.isTarget = (targetStr === target14Str && isPending);\n}\nreturn items.filter(item => item.json.isTarget === true);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        416,
+        16
+      ],
+      "id": "9a135732-4937-4261-b648-27bb5cd5251a",
+      "name": "２週間前の投稿か判断"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_MEMBER_DB_ID",
+          "mode": "list",
+          "cachedResultName": "member",
+          "cachedResultUrl": "https://www.notion.so/NOTION_MEMBER_DB_ID"
+        },
+        "simple": false,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "グループ|title",
+              "condition": "equals",
+              "titleValue": "={{ $('扱いやすくする').item.json.Group }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        720,
+        16
+      ],
+      "id": "82a5c3e1-6070-466c-965d-baf5a62c07e6",
+      "name": "メンバー情報取得",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#prタスク",
+          "mode": "name"
+        },
+        "text": "=⚠【2週間前通知】⏱\nタイトル: {{ $('扱いやすくする').item.json.Title }}\n期限: {{ $('扱いやすくする').item.json.DueDate }}\n担当グループ：{{ $('扱いやすくする').item.json.Group }}\n\n投稿まであと2週間です。コンテンツ{{ $json.properties.Cuserid.rich_text[0].text.content }}は作業をお願いします。",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        976,
+        16
+      ],
+      "id": "132cd025-d4bd-49e1-bb16-c5e4ae84938c",
+      "name": "通知メッセージ",
+      "webhookId": "944cee78-56d5-48cc-a820-f02e2561e71a",
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "9時に実行": {
+      "main": [
+        [
+          {
+            "node": "記事情報を取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "記事情報を取得": {
+      "main": [
+        [
+          {
+            "node": "扱いやすくする",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "扱いやすくする": {
+      "main": [
+        [
+          {
+            "node": "２週間前の投稿か判断",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "２週間前の投稿か判断": {
+      "main": [
+        [
+          {
+            "node": "メンバー情報取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "メンバー情報取得": {
+      "main": [
+        [
+          {
+            "node": "通知メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Tokyo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}

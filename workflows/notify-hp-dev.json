@@ -1,0 +1,975 @@
+{
+  "name": "HP開発通知_改良版",
+  "nodes": [
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_TASK_DB_ID",
+          "mode": "list",
+          "cachedResultName": "作業詳細 ",
+          "cachedResultUrl": "https://www.notion.so/NOTION_TASK_DB_ID"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1680,
+        1264
+      ],
+      "name": "データベースの更新検知",
+      "id": "b9e41a8e-a4a3-42be-9a2e-9fdf768c54d3",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "keep": "lastItems"
+      },
+      "type": "n8n-nodes-base.limit",
+      "typeVersion": 1,
+      "position": [
+        -1520,
+        1264
+      ],
+      "name": "複数更新でも１ページ取得",
+      "id": "bd5f7ba9-0309-4f2f-b49f-d028129a299b"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_TASK_DB_ID",
+          "mode": "list",
+          "cachedResultName": "作業詳細 ",
+          "cachedResultUrl": "https://www.notion.so/NOTION_TASK_DB_ID"
+        },
+        "returnAll": true,
+        "simple": false,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -1360,
+        1264
+      ],
+      "name": "記事情報取得",
+      "id": "c44f924a-1e0c-4f16-8c2f-5740cf6556f0",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "1d66d326-0fc8-4af7-8c37-f4198f7059b3",
+              "name": "HP_Dev",
+              "value": "={{ $json.properties['HP開発環境'].select.name }}",
+              "type": "string"
+            },
+            {
+              "id": "11a9aa40-16de-416a-abae-6f708515393b",
+              "name": "check_HPdev",
+              "value": "={{ $json.properties['通知チェック＿HP開発'].checkbox }}",
+              "type": "boolean"
+            },
+            {
+              "id": "657cfd78-2127-4d8a-ad5f-52d99b73ed27",
+              "name": "now_shd",
+              "value": "={{ $json.properties.now_shd.rich_text }}",
+              "type": "array"
+            },
+            {
+              "id": "983b983b-874f-4c75-a65b-b72fd1117814",
+              "name": "DueDate",
+              "value": "={{ $json.properties.投稿予定日.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "c4492742-e955-48be-8895-538619e8008d",
+              "name": "Group",
+              "value": "={{ $json.properties['担当グループ'].select.name }}",
+              "type": "string"
+            },
+            {
+              "id": "adeb935d-a802-4b26-b337-b9c0089b0f10",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1216,
+        1264
+      ],
+      "name": "扱いやすくする",
+      "id": "457a969c-b384-4a83-a20b-aa4f15e8d902"
+    },
+    {
+      "parameters": {
+        "jsCode": "for (const item of items) {\n  const dueDateStr = item.json.DueDate;\n  if (!dueDateStr) {\n    item.json.isTargetExact = false;\n    item.json.isTargetRange = false;\n    continue;\n  }\n  \n  // 基準日（今日）\n  const today = new Date();\n  today.setHours(0, 0, 0, 0);\n  \n  // 14日後の基準\n  const fourteenDaysLater = new Date(today);\n  fourteenDaysLater.setDate(today.getDate() + 14); // 必要ならここで +15 に調整\n  \n  // Notionの期限日\n  const taskDate = new Date(dueDateStr);\n  taskDate.setHours(0, 0, 0, 0);\n  \n  // 文字列比較用\n  const target14Str = fourteenDaysLater.toISOString().split('T')[0];\n  const taskDateStr = taskDate.toISOString().split('T')[0];\n  \n  // ステータス判定\n  const statusName = item.json.Status_Content?.name || \"\";\n  const isPending = (statusName === \"作業前\" || statusName === \"\");\n  \n  // 判定フラグ\n  // 1. ぴったり14日後 (📣)\n  item.json.isTargetExact = (taskDateStr === target14Str && isPending);\n  \n  // 2. 2週間以内かつ過ぎていない (🧐/👨‍💻)\n  item.json.isTargetRange = (taskDate >= today && taskDate <= fourteenDaysLater && isPending);\n}\n\n// どちらかの条件に合致するものだけを通す\nreturn items.filter(item => item.json.isTargetExact || item.json.isTargetRange);"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1072,
+        1264
+      ],
+      "name": "２週間以内の投稿だけ送る",
+      "id": "516e0006-023d-485a-9f6c-740170eb62cb"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "3acad626-d203-4eb2-9591-dc329812518f",
+              "leftValue": "={{ $json.now_shd[0].text.content }}",
+              "rightValue": "={{ $('扱いやすくする').item.json.HP_Dev }}",
+              "operator": {
+                "type": "string",
+                "operation": "equals",
+                "name": "filter.operator.equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        -848,
+        1264
+      ],
+      "name": "ステータスが変わってる記事のみ次へ",
+      "id": "1f1d1d50-0ef3-4c43-8cfd-f5a2f8566e1c"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('扱いやすくする').item.json.id }}",
+          "mode": "id",
+          "__regex": "^([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})"
+        },
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "=通知チェック＿HP開発|checkbox"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -624,
+        1264
+      ],
+      "name": "変わってる記事は通知チェックを外す",
+      "id": "a5d06ec7-1241-4ab0-80b6-2d3cb7efbfdf",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "get",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $json.id }}",
+          "mode": "id",
+          "__regex": "^([0-9a-f]{8}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{4}-?[0-9a-f]{12})"
+        },
+        "simple": false
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -432,
+        1264
+      ],
+      "name": "チェック外れた状態で再度情報取得",
+      "id": "09211c38-5815-41e7-b14d-76aced9f46c2",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "572ff2d8-ddf4-4243-b0b0-f1a616075abf",
+              "name": "=Title",
+              "value": "={{ $json.properties.タイトル.title[0].plain_text }}",
+              "type": "string"
+            },
+            {
+              "id": "1d66d326-0fc8-4af7-8c37-f4198f7059b3",
+              "name": "HP_Dev",
+              "value": "={{ $json.properties['HP開発環境'].select.name }}",
+              "type": "string"
+            },
+            {
+              "id": "11a9aa40-16de-416a-abae-6f708515393b",
+              "name": "check_HPdev",
+              "value": "={{ $json.properties['通知チェック＿HP開発'].checkbox }}",
+              "type": "boolean"
+            },
+            {
+              "id": "657cfd78-2127-4d8a-ad5f-52d99b73ed27",
+              "name": "now_shd",
+              "value": "={{ $json.properties.now_shd.rich_text }}",
+              "type": "array"
+            },
+            {
+              "id": "983b983b-874f-4c75-a65b-b72fd1117814",
+              "name": "DueDate",
+              "value": "={{ $json.properties.投稿予定日.date.start }}",
+              "type": "string"
+            },
+            {
+              "id": "c4492742-e955-48be-8895-538619e8008d",
+              "name": "Group",
+              "value": "={{ $json.properties['担当グループ'].select.name }}",
+              "type": "string"
+            },
+            {
+              "id": "adeb935d-a802-4b26-b337-b9c0089b0f10",
+              "name": "id",
+              "value": "={{ $json.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -288,
+        1264
+      ],
+      "name": "扱いやすい形へ",
+      "id": "112c05f8-17f1-4647-b037-8fc899d90a57"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $('扱いやすい形へ').item.json.HP_Dev }}",
+                    "rightValue": "修正依頼",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "06fbdf33-62cb-46a7-8973-0ccf08d78e08"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "fc6f6dbe-5976-48a0-8526-448273e0b21c",
+                    "leftValue": "={{ $('扱いやすい形へ').item.json.HP_Dev }}",
+                    "rightValue": "TL確認",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "f1911961-29c1-4b33-abd4-3ad381f5e912",
+                    "leftValue": "={{ $('扱いやすい形へ').item.json.HP_Dev }}",
+                    "rightValue": "PO確認",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "0e3e9186-499f-4144-871d-76b302cbabf2",
+                    "leftValue": "={{ $('扱いやすい形へ').item.json.HP_Dev }}",
+                    "rightValue": "済",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "dd5624cb-d420-4ee2-8029-de58401e567e",
+                    "leftValue": "",
+                    "rightValue": "",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        1216
+      ],
+      "name": "ステータスの条件分岐",
+      "id": "80f04665-7bad-46ab-9dc5-2fd8e67ecf96"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_MEMBER_DB_ID",
+          "mode": "list",
+          "cachedResultName": "member",
+          "cachedResultUrl": "https://www.notion.so/NOTION_MEMBER_DB_ID"
+        },
+        "simple": false,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "グループ|title",
+              "condition": "equals",
+              "titleValue": "={{ $json.Group }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        432,
+        1232
+      ],
+      "name": "メンバー情報取得",
+      "id": "a4041415-4057-4b8b-9bb0-2c18851c7c5f",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_MEMBER_DB_ID",
+          "mode": "list",
+          "cachedResultName": "member",
+          "cachedResultUrl": "https://www.notion.so/NOTION_MEMBER_DB_ID"
+        },
+        "simple": false,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "グループ|title",
+              "condition": "equals",
+              "titleValue": "={{ $json.Group }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        448,
+        1808
+      ],
+      "name": "メンバー情報取得1",
+      "id": "ea5e8b0d-818a-46b6-82ca-7445d959a9e1",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#prタスク",
+          "mode": "name"
+        },
+        "text": "=📣【修正依頼】【HP開発環境】{{ $json.properties.Huserid.rich_text[0].text.content }}\nタイトル: {{ $('扱いやすい形へ').item.json.Title }}\n期限: {{ $('扱いやすい形へ').item.json.DueDate }}\n担当グループ：{{ $('扱いやすい形へ').item.json.Group }}\nコメントをもとに修正を行ってください。",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        672,
+        1248
+      ],
+      "name": "修正依頼メッセージ",
+      "webhookId": "74620696-4f09-4b05-9192-72ec6031d451",
+      "id": "0e7af5a7-1315-478b-a839-1470a61760ee",
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('扱いやすい形へ').item.json.id }}",
+          "mode": "id"
+        },
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "通知チェック＿HP開発|checkbox",
+              "checkboxValue": true
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        1248
+      ],
+      "name": "通知チェック",
+      "id": "8426750f-1e48-4534-920e-ff7721b3875c",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "update",
+        "pageId": {
+          "__rl": true,
+          "value": "={{ $('扱いやすい形へ').item.json.id }}",
+          "mode": "id"
+        },
+        "simple": false,
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "now_shd|rich_text",
+              "textContent": "={{ $('扱いやすい形へ').item.json.HP_Dev }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1040,
+        1248
+      ],
+      "name": "今回のステータス保存",
+      "id": "ada2d9aa-cb26-463b-bab5-d8c5fd648ae0",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#prタスク",
+          "mode": "name"
+        },
+        "text": "=🧐【TL確認依頼】【HP開発環境】{{ $json.properties.userid.rich_text[0].plain_text }}\nタイトル: {{ $('扱いやすい形へ').item.json.Title }}\n期限: {{ $('扱いやすい形へ').item.json.DueDate }}\n担当グループ：{{ $('扱いやすい形へ').item.json.Group }}\nタスクリーダーは確認をお願いします。",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        672,
+        1440
+      ],
+      "name": "TL確認メッセージ",
+      "webhookId": "f4d4aad8-62c2-42e8-bced-da2c826028ce",
+      "id": "ceda8313-8be7-4f98-86d3-d2e1868822b5",
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#prタスク",
+          "mode": "name"
+        },
+        "text": "=:male-technologist:【PO確認依頼】【HP開発環境】<@SLACK_USER_ID_TEACHER>\nタイトル: {{ $('扱いやすい形へ').item.json.Title }}\n期限: {{ $('扱いやすい形へ').item.json.DueDate }}\n担当グループ：{{ $('扱いやすい形へ').item.json.Group }}\n先生は確認をお願いします。",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        672,
+        1616
+      ],
+      "name": "PO確認メッセージ",
+      "webhookId": "50b6a39e-11f3-47f7-bdb4-a6b3404bd9fe",
+      "id": "5854177d-926f-4b97-bf06-4e5b3398bc27",
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "#prタスク",
+          "mode": "name"
+        },
+        "text": "=📣【作業通知】\nタイトル: {{ $('扱いやすい形へ').item.json.Title }}\n期限: {{ $('扱いやすい形へ').item.json.DueDate }}\n担当グループ：{{ $('扱いやすい形へ').item.json.Group }}\n{{ $json.properties.Huserid.rich_text[0].text.content }}は本番環境に移行してください。",
+        "otherOptions": {
+          "includeLinkToWorkflow": false
+        }
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.5,
+      "position": [
+        672,
+        1808
+      ],
+      "name": "済メッセージ",
+      "webhookId": "dd08ca84-3fae-47e1-8958-3c7295682cf0",
+      "id": "84f57e21-fe0c-4ac3-8d8e-ebd424c0c8e8",
+      "credentials": {
+        "slackApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_ROLE_DB_ID",
+          "mode": "id"
+        },
+        "returnAll": true,
+        "simple": false,
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "役割|title",
+              "condition": "equals",
+              "titleValue": "TL"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "name": "TL取得",
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        480,
+        1328
+      ],
+      "executeOnce": true,
+      "id": "b25fb79d-f3a9-4ade-a647-dc697e64375e",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "データベースの更新検知": {
+      "main": [
+        [
+          {
+            "node": "複数更新でも１ページ取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "複数更新でも１ページ取得": {
+      "main": [
+        [
+          {
+            "node": "記事情報取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "記事情報取得": {
+      "main": [
+        [
+          {
+            "node": "扱いやすくする",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "扱いやすくする": {
+      "main": [
+        [
+          {
+            "node": "２週間以内の投稿だけ送る",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "２週間以内の投稿だけ送る": {
+      "main": [
+        [
+          {
+            "node": "ステータスが変わってる記事のみ次へ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ステータスが変わってる記事のみ次へ": {
+      "main": [
+        [],
+        [
+          {
+            "node": "変わってる記事は通知チェックを外す",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "変わってる記事は通知チェックを外す": {
+      "main": [
+        [
+          {
+            "node": "チェック外れた状態で再度情報取得",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "チェック外れた状態で再度情報取得": {
+      "main": [
+        [
+          {
+            "node": "扱いやすい形へ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "扱いやすい形へ": {
+      "main": [
+        [
+          {
+            "node": "ステータスの条件分岐",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ステータスの条件分岐": {
+      "main": [
+        [
+          {
+            "node": "メンバー情報取得",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "TL取得",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "PO確認メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "メンバー情報取得1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "今回のステータス保存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "メンバー情報取得": {
+      "main": [
+        [
+          {
+            "node": "修正依頼メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "メンバー情報取得1": {
+      "main": [
+        [
+          {
+            "node": "済メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "修正依頼メッセージ": {
+      "main": [
+        [
+          {
+            "node": "通知チェック",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "通知チェック": {
+      "main": [
+        [
+          {
+            "node": "今回のステータス保存",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TL確認メッセージ": {
+      "main": [
+        [
+          {
+            "node": "通知チェック",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "PO確認メッセージ": {
+      "main": [
+        [
+          {
+            "node": "通知チェック",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "済メッセージ": {
+      "main": [
+        [
+          {
+            "node": "通知チェック",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "TL取得": {
+      "main": [
+        [
+          {
+            "node": "TL確認メッセージ",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Tokyo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}

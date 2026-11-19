@@ -1,0 +1,1652 @@
+{
+  "name": "AIチェック",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_TASK_DB_ID",
+          "mode": "list",
+          "cachedResultName": "作業詳細 ",
+          "cachedResultUrl": "https://www.notion.so/NOTION_TASK_DB_ID"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        -128,
+        -224
+      ],
+      "id": "f04b170a-e109-448a-93a6-cb4d3c31a772",
+      "name": "Get many database pages",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "pollTimes": {
+          "item": [
+            {
+              "mode": "everyMinute"
+            }
+          ]
+        },
+        "event": "pagedUpdatedInDatabase",
+        "databaseId": {
+          "__rl": true,
+          "value": "NOTION_TASK_DB_ID",
+          "mode": "list",
+          "cachedResultName": "作業詳細 ",
+          "cachedResultUrl": "https://www.notion.so/NOTION_TASK_DB_ID"
+        }
+      },
+      "type": "n8n-nodes-base.notionTrigger",
+      "typeVersion": 1,
+      "position": [
+        -336,
+        -224
+      ],
+      "id": "f58a16c9-d5cf-4b1e-9eb6-b9a83ae65087",
+      "name": "Notion Trigger",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.property_ai }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    },
+                    "id": "d5131a82-91ce-47e8-be9c-7ae48defd252"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "e7714f67-3114-468c-8604-c9cb0a2bb1ae",
+                    "leftValue": "={{ $json.property_h_pdev_ai }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "9b7018ad-6b61-4339-8f0c-dfc8e220e0f8",
+                    "leftValue": "={{ $json.property_h_pprod_ai }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "ac4fa608-cc0b-4f62-af8e-e846aa33a760",
+                    "leftValue": "={{ $json.property_snsai }}",
+                    "rightValue": true,
+                    "operator": {
+                      "type": "boolean",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        64,
+        -224
+      ],
+      "id": "ad3a0366-461a-4c4b-b7d5-b6e1c787aa02",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        64
+      ],
+      "id": "5bfe4242-3bd5-42d6-8d11-fa94f7338d3b",
+      "name": "HTTP Request1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sectionName = 'SNS';   // コンテンツ用の分岐にコピーするときは 'コンテンツ' に変える\nconst norm = s => s.trim().normalize('NFKC');\n\nconst blocks = $input.first().json.results;\n\nconst target = blocks.find(b => {\n  const rt = (b[b.type] && b[b.type].rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  return b.has_children && norm(text).startsWith(norm(sectionName));\n});\n\nif (!target) {\n  throw new Error(sectionName + ' セクションが見つかりません');\n}\n\nreturn [{ json: { block_id: target.id, page_id: target.parent.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        64
+      ],
+      "id": "f56f6d78-8d8d-4594-a6ed-5052edf48fe3",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.block_id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        64
+      ],
+      "id": "d2e37b18-2fb8-4e55-93d6-0ea47d43f16f",
+      "name": "HTTPR",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.notion.com/v1/blocks/NOTION_CHECKLIST_PAGE_ID/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        64
+      ],
+      "id": "4f92518a-5e61-44dc-a0ad-409f9279200d",
+      "name": "HTTPR2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 2000,\n  \"temperature\": 0,\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }} }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        64
+      ],
+      "id": "60916c5f-f2e9-4b52-91d1-4d0691941cd1",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.choices[0].message.content;\nlet result;\ntry {\n  result = JSON.parse(text.replace(/```json|```/g, '').trim());\n} catch (e) {\n  result = { verdict: 'fail', issues: [{ section: '-', rule: 'AI応答の解析失敗', suggestion: '再実行してください', location: '' }] };\n}\nresult.page_id = $('code').first().json.page_id;\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        64
+      ],
+      "id": "18f551d5-30aa-4960-b3c7-f0fb145aa81e",
+      "name": "Code in JavaScript3"
+    },
+    {
+      "parameters": {
+        "jsCode": "// チェックリストのブロックをテキスト化\nconst ruleBlocks = $input.first().json.results;\nconst ruleLines = [];\nfor (const b of ruleBlocks) {\n  const c = b[b.type];\n  const rt = (c && c.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  if (b.type.startsWith('heading')) ruleLines.push('## ' + text);\n  else if (b.type.includes('list_item')) ruleLines.push('- ' + text);\n  else ruleLines.push(text);\n}\nconst rules = ruleLines.join('\\n');\n\n// SNS本文を、テキスト連結ノードから取得（ノード名は実際のものに置き換え）\nconst body = $('renketu').first().json.body_text;\nconst pageId = $('renketu').first().json.page_id;\n\nconst prompt = `あなたは研究室の広報物の校正担当です。以下のチェックリストに基づき、対象文章を確認してください。\n\n# 重要な制約\n- チェックリストのルール違反と、明白な誤字脱字・文法誤りのみを指摘する\n- 内容の良し悪しや文章の好みには言及しない\n- 対象文章には複数のSNS向け原稿（X/LinkedIn用・Instagram用、日本語・英語）が含まれる。見出しごとに該当するルールを適用すること\n- チェックリストに【例・要確認】と書かれた項目は、まだ仮のルールなので参考程度に扱う\n- チェックリストのルール違反に加え、明白な誤字脱字・タイプミス・文法誤り・表記ゆれは、チェックリストに記載がなくても指摘する\n\n# チェックリスト\n${rules}\n\n# 対象文章\n${body}\n\n# 出力形式\n以下のJSON形式のみで出力すること。\n{\n  \"verdict\": \"pass\" または \"fail\",\n  \"issues\": [\n    { \"section\": \"どの原稿か（例: Instagram用 日本語）\", \"location\": \"該当箇所の引用（20字程度）\", \"rule\": \"違反したルール\", \"suggestion\": \"修正案\" }\n  ]\n}\nissuesが空なら verdict は pass。`;\n\nreturn [{ json: { prompt, page_id: pageId, body_len: (body || '').length, rules_len: (rules || '').length } }];\n//return [{ json: { prompt, page_id: pageId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        64
+      ],
+      "id": "5105332b-d904-4513-ae0b-1cc578856efd",
+      "name": "code"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blocks = $input.first().json.results;\nconst lines = [];\n\nfor (const b of blocks) {\n  const content = b[b.type];\n  const rt = (content && content.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n\n  if (b.type.startsWith('heading')) {\n    lines.push('## ' + text);          // 見出しは目印を付ける\n  } else if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {\n    lines.push('- ' + text);           // 箇条書きも構造を保つ\n  } else {\n    lines.push(text);                  // 空行はそのまま空行として残す\n  }\n}\n\nconst bodyText = lines.join('\\n');\n\nreturn [{ json: {\n  body_text: bodyText,\n  char_count: bodyText.length,\n  page_id: $('HTTPR').first().json.page_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        64
+      ],
+      "id": "54f1047c-4b45-4e45-9ae0-d5bb5fa92cd2",
+      "name": "renketu"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst issues = r.issues || [];\n\nlet text;\nif (r.verdict === 'pass' || issues.length === 0) {\n  text = '【SNS AIチェック結果】✅ 指摘事項はありません。';\n} else {\n  const lines = issues.map((i, n) =>\n    `${n + 1}. [${i.section}] ${i.rule}\\n   該当: ${i.location}\\n   修正案: ${i.suggestion}`\n  );\n  text = `【SNS AIチェック結果】⚠️ ${issues.length}件の指摘があります。\\n\\n` + lines.join('\\n\\n')\n       + '\\n\\n※形式面の自動チェックです。誤検出の可能性もあるため、最終判断は担当者が行ってください。';\n}\n\nreturn [{ json: { comment_text: text, page_id: r.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        64
+      ],
+      "id": "729496e2-aef1-459a-bd76-2ffbc1f612b9",
+      "name": "Code in JavaScript1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": { \"page_id\": \"{{ $('Switch').item.json.id }}\" },\n  \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($json.comment_text) }} } } ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2048,
+        64
+      ],
+      "id": "869cc4fe-8f9a-445f-af0d-7dc9faee3686",
+      "name": "HTTP Request2",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('Switch').first().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"properties\": {\n    \"SNSAIチェック\": { \"checkbox\": false }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        64
+      ],
+      "id": "4e2b7921-9b5f-4b5c-9e76-3e068c2dff13",
+      "name": "チェック外し",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        -464
+      ],
+      "id": "0c0274f9-72a8-4aaa-96b9-ce84f34820c6",
+      "name": "HTTP Request3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sectionName = 'コンテンツ';   // コンテンツ用の分岐にコピーするときは 'コンテンツ' に変える\nconst norm = s => s.trim().normalize('NFKC');\n\nconst blocks = $input.first().json.results;\n\nconst target = blocks.find(b => {\n  const rt = (b[b.type] && b[b.type].rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  return b.has_children && norm(text).startsWith(norm(sectionName));\n});\n\nif (!target) {\n  throw new Error(sectionName + ' セクションが見つかりません');\n}\n\nreturn [{ json: { block_id: target.id, page_id: target.parent.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -464
+      ],
+      "id": "d5128d17-9b12-49e1-b73c-768edc6d8cf4",
+      "name": "Code in JavaScript2"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.block_id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -464
+      ],
+      "id": "a6fef066-b453-4f33-9fbf-74c801a24e44",
+      "name": "HTTPR1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "https://api.notion.com/v1/blocks/NOTION_CHECKLIST_PAGE_ID/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        -464
+      ],
+      "id": "f7911002-e953-42c5-9fa1-2a523cf92fed",
+      "name": "HTTPR3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.openai.com/v1/chat/completions",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer YOUR_OPENAI_API_KEY"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"gpt-4o\",\n  \"max_tokens\": 2000,\n  \"temperature\": 0,\n  \"response_format\": { \"type\": \"json_object\" },\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.prompt) }} }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1456,
+        -464
+      ],
+      "id": "6f6d6fcb-2020-47fb-ad1a-b1b2dcbc2e42",
+      "name": "HTTP Request4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const text = $input.first().json.choices[0].message.content;\nlet result;\ntry {\n  result = JSON.parse(text.replace(/```json|```/g, '').trim());\n} catch (e) {\n  result = { verdict: 'fail', issues: [{ section: '-', rule: 'AI応答の解析失敗', suggestion: '再実行してください', location: '' }] };\n}\nresult.page_id = $('code1').first().json.page_id;\nreturn [{ json: result }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1664,
+        -464
+      ],
+      "id": "ff1a3ed9-6e26-4aa2-b44d-00b6292e1232",
+      "name": "Code in JavaScript4"
+    },
+    {
+      "parameters": {
+        "jsCode": "// チェックリストのブロックをテキスト化\nconst ruleBlocks = $input.first().json.results;\nconst ruleLines = [];\nfor (const b of ruleBlocks) {\n  const c = b[b.type];\n  const rt = (c && c.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  if (b.type.startsWith('heading')) ruleLines.push('## ' + text);\n  else if (b.type.includes('list_item')) ruleLines.push('- ' + text);\n  else ruleLines.push(text);\n}\nconst rules = ruleLines.join('\\n');\n\n// 本文をテキスト連結ノードから取得（★コピー後の実際のノード名に置き換える）\nconst body = $('renketu1').first().json.body_text;\nconst pageId = $('renketu1').first().json.page_id;\n\nconst prompt = `あなたは研究室の広報物の校正担当です。以下のチェックリストに基づき、対象文章を確認してください。\n\n# 重要な制約\n- チェックリストのルール違反、および明白な誤字脱字・タイプミス・文法誤り・表記ゆれを指摘する（誤字脱字はチェックリストに記載がなくても指摘してよい）\n- 内容の良し悪しや文章の好みには言及しない\n- 対象文章は研究紹介記事であり、日本語版と英語版が含まれる。それぞれに該当するルールを適用すること\n- 日本語版と英語版で、数値・研究内容・結論が一致しているかを確認すること\n- 指摘は必ず対象文章に実在する箇所に対して行い、ルール名は指摘内容と一致させること。判断に迷う場合は指摘しない\n\n# チェックリスト\n${rules}\n\n# 対象文章\n${body}\n\n# 出力形式\n以下のJSON形式のみで出力すること。\n{\n  \"verdict\": \"pass\" または \"fail\",\n  \"issues\": [\n    { \"section\": \"どの部分か（例: 日本語版、英語版）\", \"location\": \"該当箇所の引用（20字程度）\", \"rule\": \"違反したルール\", \"suggestion\": \"修正案\" }\n  ]\n}\nissuesが空なら verdict は pass。`;\n\nreturn [{ json: { prompt, page_id: pageId } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -464
+      ],
+      "id": "09ff4ee0-2a65-4e38-80c7-9b73fc0d466a",
+      "name": "code1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const blocks = $input.first().json.results;\nconst lines = [];\n\nfor (const b of blocks) {\n  const content = b[b.type];\n  const rt = (content && content.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n\n  if (b.type.startsWith('heading')) {\n    lines.push('## ' + text);          // 見出しは目印を付ける\n  } else if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {\n    lines.push('- ' + text);           // 箇条書きも構造を保つ\n  } else {\n    lines.push(text);                  // 空行はそのまま空行として残す\n  }\n}\n\nconst bodyText = lines.join('\\n');\n\nreturn [{ json: {\n  body_text: bodyText,\n  char_count: bodyText.length,\n  page_id: $('HTTPR1').first().json.page_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -464
+      ],
+      "id": "8dd889f1-ba63-4e9c-b4c5-7be585815ed7",
+      "name": "renketu1"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst issues = r.issues || [];\n\nlet text;\nif (r.verdict === 'pass' || issues.length === 0) {\n  text = '【コンテンツ AIチェック結果】✅ 指摘事項はありません。';\n} else {\n  const lines = issues.map((i, n) =>\n    `${n + 1}. [${i.section}] ${i.rule}\\n   該当: ${i.location}\\n   修正案: ${i.suggestion}`\n  );\n  text = `【コンテンツ AIチェック結果】⚠️ ${issues.length}件の指摘があります。\\n\\n` + lines.join('\\n\\n')\n       + '\\n\\n※形式面の自動チェックです。誤検出の可能性もあるため、最終判断は担当者が行ってください。';\n}\n\nreturn [{ json: { comment_text: text, page_id: r.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        -464
+      ],
+      "id": "9e2c3b11-5357-4f24-8bf4-15b1c90641bd",
+      "name": "Code in JavaScript5"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": { \"page_id\": \"{{ $('Switch').item.json.id }}\" },\n  \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($json.comment_text) }} } } ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2048,
+        -464
+      ],
+      "id": "b55a00e9-ef53-44f3-88ba-827afb591ca2",
+      "name": "HTTP Request5",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('Switch').first().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"properties\": {\n    \"コンテンツAIチェック\": { \"checkbox\": false }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        -464
+      ],
+      "id": "2e22aa12-9b44-4a3b-b832-aab1fc08670b",
+      "name": "チェック外し1",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://wp-dev.example.com/wp-json/wp/v2/posts/{{ $json.property_h_pdev_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        -288
+      ],
+      "id": "18fa139a-5adc-4129-83d5-f220edb09639",
+      "name": "HTTP Request8",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\nconst html = (post.content && post.content.rendered) || '';\nconst title = (post.title && post.title.rendered) || '';\n\nconst text = html\n  .replace(/<figcaption[^>]*>([\\s\\S]*?)<\\/figcaption>/gi, '\\n［図キャプション］$1\\n')\n  .replace(/<\\/(p|div|h[1-6]|li)>/gi, '\\n')\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nconst issues = [];\nif (!post.featured_media) {\n  issues.push({ section: '記事設定', rule: 'アイキャッチ画像が未設定', location: '-', suggestion: 'アイキャッチ画像を設定してください' });\n}\nif (!post.categories || post.categories.length === 0) {\n  issues.push({ section: '記事設定', rule: 'カテゴリが未設定', location: '-', suggestion: 'カテゴリを設定してください' });\n}\n/**const imgsNoAlt = [...html.matchAll(/<img(?![^>]*\\balt=)[^>]*>/gi)];\nif (imgsNoAlt.length > 0) {\n  issues.push({ section: '本文', rule: `alt属性のない画像が${imgsNoAlt.length}件`, location: '-', suggestion: '画像にalt属性を設定してください' });\n}**/\n\nreturn [{ json: {\n  wp_text: `# タイトル\\n${title}\\n\\n# 本文\\n${text}`,\n  wp_title: title,\n  issues\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -288
+      ],
+      "id": "707d811e-4d44-4b22-a7f3-aaec73253901",
+      "name": "Code in JavaScript8"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $('Switch').item.json.id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -288
+      ],
+      "id": "de2b6719-229e-42ff-aaf4-3a17bf4f8a39",
+      "name": "HTTP Request9",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sectionName = 'コンテンツ';   // コンテンツ用の分岐にコピーするときは 'コンテンツ' に変える\nconst norm = s => s.trim().normalize('NFKC');\n\nconst blocks = $input.first().json.results;\n\nconst target = blocks.find(b => {\n  const rt = (b[b.type] && b[b.type].rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  return b.has_children && norm(text).startsWith(norm(sectionName));\n});\n\nif (!target) {\n  throw new Error(sectionName + ' セクションが見つかりません');\n}\n\nreturn [{ json: { block_id: target.id, page_id: target.parent.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -288
+      ],
+      "id": "eafaf7db-ed86-4793-80ec-89c7cea6ab06",
+      "name": "Code in JavaScript9"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.block_id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        -288
+      ],
+      "id": "7611def8-7af6-4103-a262-40ed7233fe89",
+      "name": "HTTPR6",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const blocks = $input.first().json.results;\nconst lines = [];\n\nfor (const b of blocks) {\n  const content = b[b.type];\n  const rt = (content && content.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n\n  if (b.type.startsWith('heading')) {\n    lines.push('## ' + text);          // 見出しは目印を付ける\n  } else if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {\n    lines.push('- ' + text);           // 箇条書きも構造を保つ\n  } else {\n    lines.push(text);                  // 空行はそのまま空行として残す\n  }\n}\n\nconst bodyText = lines.join('\\n');\n\nreturn [{ json: {\n  notion_text: bodyText,\n  char_count: bodyText.length,\n  page_id: $('HTTPR6').first().json.page_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -288
+      ],
+      "id": "ad6e7fa6-ce8b-472f-96d1-91d03a22a5f9",
+      "name": "renketu3"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst issues = r.issues || [];\n\nlet text;\nif (r.verdict === 'pass' || issues.length === 0) {\n  text = '【HP開発 AIチェック結果】✅ 指摘事項はありません。';\n} else {\n  const lines = issues.map((i, n) =>\n    `${n + 1}. [${i.section}] ${i.rule}\\n   該当: ${i.location}\\n   修正案: ${i.suggestion}`\n  );\n  text = `【HP開発 AIチェック結果】⚠️ ${issues.length}件の指摘があります。\\n\\n` + lines.join('\\n\\n')\n       + '\\n\\n※形式面の自動チェックです。誤検出の可能性もあるため、最終判断は担当者が行ってください。';\n}\n\nreturn [{ json: { comment_text: text, page_id: r.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        -288
+      ],
+      "id": "d62aa1b5-429b-4e26-8a4f-4617d0f22afb",
+      "name": "Code in JavaScript10"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": { \"page_id\": \"{{ $('Switch').item.json.id }}\" },\n  \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($json.comment_text) }} } } ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2048,
+        -288
+      ],
+      "id": "75260057-4b20-4258-9d95-f8208d6c4f97",
+      "name": "HTTP Request10",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const wpNode = $('Code in JavaScript8');\nconst wpText = wpNode.first().json.wp_text;\nconst metaIssues = wpNode.first().json.issues || [];\n\n// Notion原稿から日本語部分のみ抽出（英語セクションの開始で打ち切る）\nconst notionFull = $input.first().json.notion_text;\nconst allLines = notionFull.split('\\n');\nconst enIdx = allLines.findIndex(l => /^#*\\s*[【\\[]?\\s*(英語|English)\\s*[】\\]]?\\s*$/.test(l.trim()));\nconst jpLines = enIdx >= 0 ? allLines.slice(0, enIdx) : allLines;\nconst notionText = jpLines.join('\\n');\n\n// 比較用の正規化：見出し・ラベル行・行頭タグを除外\nconst clean = (raw) => raw\n  .split('\\n')\n  .map(l => l.trim())\n  .filter(l => l)\n  .filter(l => !/^#/.test(l))                          // 「# タイトル」「## 見出し」\n  .filter(l => !/^[【\\[].{1,10}[】\\]]\\s*$/.test(l))      // 「【日本語】」など単独ラベル行\n  .map(l => l.replace(/^(タイトル|本文)[：:]\\s*/, ''))     // 「タイトル：」「本文：」接頭辞\n  .map(l => l.replace(/^[［\\[].{1,10}[］\\]]\\s*/, ''));    // 「［図キャプション］」などの行頭タグを除去\n\n// 段落の改行位置の違いを吸収するため、行単位ではなく「文」単位に変換して比較する\nconst toSentences = (lines) => lines\n  .join('')                        // 改行（段落の切れ目）を無視して1本に連結\n  .split(/(?<=[。！？])/)           // 文末記号の直後で分割\n  .map(s => s.trim())\n  .filter(s => s);\n\nconst norm = s => s.replace(/\\s+/g, '').normalize('NFKC').trim();\n\nconst wpLines = toSentences(clean(wpText));\nconst nLines  = toSentences(clean(notionText));\n\nconst issues = [...metaIssues];\n\nconst missing = nLines.filter(l => !wpLines.some(w => norm(w) === norm(l)));\nconst extra   = wpLines.filter(l => !nLines.some(n => norm(n) === norm(l)));\n\nmissing.forEach(l => issues.push({\n  section: '本文', rule: '原稿にあるがHPに無い文章',\n  location: l.slice(0, 40), suggestion: '原稿からコピーしてください'\n}));\nextra.forEach(l => issues.push({\n  section: '本文', rule: 'HPにあるが原稿に無い文章',\n  location: l.slice(0, 40), suggestion: '原稿と一致しているか確認してください'\n}));\n\nreturn [{ json: {\n  verdict: issues.length === 0 ? 'pass' : 'fail',\n  issues,\n  page_id: $('Switch').first().json.id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        -288
+      ],
+      "id": "5162ebd9-2798-4064-8897-3879e01290e7",
+      "name": "Code in JavaScript6"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('Switch').first().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"properties\": {\n    \"HPdevAIチェック\": { \"checkbox\": false }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        -288
+      ],
+      "id": "0f561dbf-b3f3-4adb-8a81-6e0c54982b43",
+      "name": "チェック外し2",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://www.example.com/wp-json/wp/v2/posts/{{ $('Get many database pages').item.json.property_h_pprod_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "conext",
+              "value": "edit"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        320,
+        -128
+      ],
+      "id": "d95c5a50-48b4-4d32-843b-f8aafae6f8a3",
+      "name": "HTTP Request11",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "本番環境"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const post = $input.first().json;\nconst html = (post.content && post.content.rendered) || '';\nconst title = (post.title && post.title.rendered) || '';\n\nconst text = html\n  .replace(/<figcaption[^>]*>([\\s\\S]*?)<\\/figcaption>/gi, '\\n［図キャプション］$1\\n')\n  .replace(/<\\/(p|div|h[1-6]|li)>/gi, '\\n')\n  .replace(/<br\\s*\\/?>/gi, '\\n')\n  .replace(/<[^>]+>/g, '')\n  .replace(/&nbsp;/g, ' ')\n  .replace(/&amp;/g, '&')\n  .replace(/&lt;/g, '<')\n  .replace(/&gt;/g, '>')\n  .replace(/\\n{3,}/g, '\\n\\n')\n  .trim();\n\nconst issues = [];\nif (!post.featured_media) {\n  issues.push({ section: '記事設定', rule: 'アイキャッチ画像が未設定', location: '-', suggestion: 'アイキャッチ画像を設定してください' });\n}\nif (!post.categories || post.categories.length === 0) {\n  issues.push({ section: '記事設定', rule: 'カテゴリが未設定', location: '-', suggestion: 'カテゴリを設定してください' });\n}\n/**const imgsNoAlt = [...html.matchAll(/<img(?![^>]*\\balt=)[^>]*>/gi)];\nif (imgsNoAlt.length > 0) {\n  issues.push({ section: '本文', rule: `alt属性のない画像が${imgsNoAlt.length}件`, location: '-', suggestion: '画像にalt属性を設定してください' });\n}**/\n\nreturn [{ json: {\n  wp_text: `# タイトル\\n${title}\\n\\n# 本文\\n${text}`,\n  wp_title: title,\n  issues\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        512,
+        -128
+      ],
+      "id": "af7dc9d8-ed9c-4823-96f4-c0daa5c1cca5",
+      "name": "Code in JavaScript11"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $('Switch').item.json.id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        704,
+        -128
+      ],
+      "id": "a09726c9-fe26-4bf0-9f99-ab1adf782ed5",
+      "name": "HTTP Request12",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const sectionName = 'コンテンツ';   // コンテンツ用の分岐にコピーするときは 'コンテンツ' に変える\nconst norm = s => s.trim().normalize('NFKC');\n\nconst blocks = $input.first().json.results;\n\nconst target = blocks.find(b => {\n  const rt = (b[b.type] && b[b.type].rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n  return b.has_children && norm(text).startsWith(norm(sectionName));\n});\n\nif (!target) {\n  throw new Error(sectionName + ' セクションが見つかりません');\n}\n\nreturn [{ json: { block_id: target.id, page_id: target.parent.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        896,
+        -128
+      ],
+      "id": "55d60b10-5b5c-49d8-8e38-fbb939c1b8f1",
+      "name": "Code in JavaScript12"
+    },
+    {
+      "parameters": {
+        "url": "=https://api.notion.com/v1/blocks/{{ $json.block_id }}/children?page_size=100",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1040,
+        -128
+      ],
+      "id": "45faee0e-0113-4da0-b0ad-a1d3e747b526",
+      "name": "HTTPR7",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "開発環境"
+        },
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const blocks = $input.first().json.results;\nconst lines = [];\n\nfor (const b of blocks) {\n  const content = b[b.type];\n  const rt = (content && content.rich_text) || [];\n  const text = rt.map(t => t.plain_text).join('');\n\n  if (b.type.startsWith('heading')) {\n    lines.push('## ' + text);          // 見出しは目印を付ける\n  } else if (b.type === 'bulleted_list_item' || b.type === 'numbered_list_item') {\n    lines.push('- ' + text);           // 箇条書きも構造を保つ\n  } else {\n    lines.push(text);                  // 空行はそのまま空行として残す\n  }\n}\n\nconst bodyText = lines.join('\\n');\n\nreturn [{ json: {\n  notion_text: bodyText,\n  char_count: bodyText.length,\n  page_id: $('HTTPR7').first().json.page_id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1248,
+        -128
+      ],
+      "id": "5aa2e146-6446-4d5c-a17a-cc71df255367",
+      "name": "renketu4"
+    },
+    {
+      "parameters": {
+        "jsCode": "const r = $input.first().json;\nconst issues = r.issues || [];\n\nlet text;\nif (r.verdict === 'pass' || issues.length === 0) {\n  text = '【HP本番 AIチェック結果】✅ 指摘事項はありません。';\n} else {\n  const lines = issues.map((i, n) =>\n    `${n + 1}. [${i.section}] ${i.rule}\\n   該当: ${i.location}\\n   修正案: ${i.suggestion}`\n  );\n  text = `【HP本番 AIチェック結果】⚠️ ${issues.length}件の指摘があります。\\n\\n` + lines.join('\\n\\n')\n       + '\\n\\n※形式面の自動チェックです。誤検出の可能性もあるため、最終判断は担当者が行ってください。';\n}\n\nreturn [{ json: { comment_text: text, page_id: r.page_id } }];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1840,
+        -128
+      ],
+      "id": "229c9d2b-d2f7-4c2d-8b06-3abd8aa725bb",
+      "name": "Code in JavaScript13"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.notion.com/v1/comments",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"parent\": { \"page_id\": \"{{ $('Switch').item.json.id }}\" },\n  \"rich_text\": [ { \"text\": { \"content\": {{ JSON.stringify($json.comment_text) }} } } ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2048,
+        -128
+      ],
+      "id": "ead6a9bf-7b1c-4530-85f0-b5a99965ec96",
+      "name": "HTTP Request13",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const wpNode = $('Code in JavaScript11');\nconst wpText = wpNode.first().json.wp_text;\nconst metaIssues = wpNode.first().json.issues || [];\n\n// Notion原稿から日本語部分のみ抽出（英語セクションの開始で打ち切る）\nconst notionFull = $input.first().json.notion_text;\nconst allLines = notionFull.split('\\n');\nconst enIdx = allLines.findIndex(l => /^#*\\s*[【\\[]?\\s*(英語|English)\\s*[】\\]]?\\s*$/.test(l.trim()));\nconst jpLines = enIdx >= 0 ? allLines.slice(0, enIdx) : allLines;\nconst notionText = jpLines.join('\\n');\n\n// 比較用の正規化：見出し・ラベル行・行頭タグを除外\nconst clean = (raw) => raw\n  .split('\\n')\n  .map(l => l.trim())\n  .filter(l => l)\n  .filter(l => !/^#/.test(l))                          // 「# タイトル」「## 見出し」\n  .filter(l => !/^[【\\[].{1,10}[】\\]]\\s*$/.test(l))      // 「【日本語】」など単独ラベル行\n  .map(l => l.replace(/^(タイトル|本文)[：:]\\s*/, ''))     // 「タイトル：」「本文：」接頭辞\n  .map(l => l.replace(/^[［\\[].{1,10}[］\\]]\\s*/, ''));    // 「［図キャプション］」などの行頭タグを除去\n\n// 段落の改行位置の違いを吸収するため、行単位ではなく「文」単位に変換して比較する\nconst toSentences = (lines) => lines\n  .join('')                        // 改行（段落の切れ目）を無視して1本に連結\n  .split(/(?<=[。！？])/)           // 文末記号の直後で分割\n  .map(s => s.trim())\n  .filter(s => s);\n\nconst norm = s => s.replace(/\\s+/g, '').normalize('NFKC').trim();\n\nconst wpLines = toSentences(clean(wpText));\nconst nLines  = toSentences(clean(notionText));\n\nconst issues = [...metaIssues];\n\nconst missing = nLines.filter(l => !wpLines.some(w => norm(w) === norm(l)));\nconst extra   = wpLines.filter(l => !nLines.some(n => norm(n) === norm(l)));\n\nmissing.forEach(l => issues.push({\n  section: '本文', rule: '原稿にあるがHPに無い文章',\n  location: l.slice(0, 40), suggestion: '原稿からコピーしてください'\n}));\nextra.forEach(l => issues.push({\n  section: '本文', rule: 'HPにあるが原稿に無い文章',\n  location: l.slice(0, 40), suggestion: '原稿と一致しているか確認してください'\n}));\n\nreturn [{ json: {\n  verdict: issues.length === 0 ? 'pass' : 'fail',\n  issues,\n  page_id: $('Switch').first().json.id\n}}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1456,
+        -128
+      ],
+      "id": "2e651cc0-4ce3-4df7-b92d-97e84f91aa08",
+      "name": "Code in JavaScript7"
+    },
+    {
+      "parameters": {
+        "method": "PATCH",
+        "url": "=https://api.notion.com/v1/pages/{{ $('Switch').first().json.id }}",
+        "authentication": "predefinedCredentialType",
+        "nodeCredentialType": "notionApi",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Notion-Version",
+              "value": "2022-06-28"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"properties\": {\n    \"HPprodAIチェック\": { \"checkbox\": false }\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        2208,
+        -128
+      ],
+      "id": "d71feaeb-5a95-49e9-b9a1-d7faecc12e07",
+      "name": "チェック外し3",
+      "credentials": {
+        "notionApi": {
+          "id": "REPLACE_WITH_YOUR_CREDENTIAL_ID",
+          "name": "Notion account"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Notion Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get many database pages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get many database pages": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request11",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "HTTPR",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR": {
+      "main": [
+        [
+          {
+            "node": "renketu",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR2": {
+      "main": [
+        [
+          {
+            "node": "code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "renketu": {
+      "main": [
+        [
+          {
+            "node": "HTTPR2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "main": [
+        [
+          {
+            "node": "チェック外し",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript2": {
+      "main": [
+        [
+          {
+            "node": "HTTPR1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR1": {
+      "main": [
+        [
+          {
+            "node": "renketu1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR3": {
+      "main": [
+        [
+          {
+            "node": "code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "code1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "renketu1": {
+      "main": [
+        [
+          {
+            "node": "HTTPR3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript5": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request5",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request5": {
+      "main": [
+        [
+          {
+            "node": "チェック外し1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request8": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript8": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request9": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript9": {
+      "main": [
+        [
+          {
+            "node": "HTTPR6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR6": {
+      "main": [
+        [
+          {
+            "node": "renketu3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript10": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "renketu3": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request10": {
+      "main": [
+        [
+          {
+            "node": "チェック外し2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request11": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript11",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript11": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request12": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript12",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript12": {
+      "main": [
+        [
+          {
+            "node": "HTTPR7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTPR7": {
+      "main": [
+        [
+          {
+            "node": "renketu4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "renketu4": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript13": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request13": {
+      "main": [
+        [
+          {
+            "node": "チェック外し3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript7": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript13",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript6": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "timezone": "Asia/Tokyo",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "nodeGroups": []
+}
