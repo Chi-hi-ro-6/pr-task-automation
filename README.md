@@ -57,6 +57,29 @@ LLMは使わず、ルールで判定します。
 2. アイキャッチ画像とカテゴリが設定されているかを確認する。
 3. Notionの原稿（日本語部分）とHPの本文を**文単位**で比べ、片方にしかない文を指摘する。改行位置の違いは無視する。
 
+## 画面の例
+
+メンバーの名前は黒塗りにしています。
+
+**Notionのタスク管理データベース**（係ごとのステータスを各作業者が更新する）
+
+![Notionのタスク管理データベース](docs/images/notion-database.png)
+
+**記事ページ**（原稿も同じページで管理する。左が一覧、右が1記事の本文）
+
+![Notionの記事ページ](docs/images/notion-page.png)
+
+**Slackの通知**（左：毎朝のリマインド、右：投稿予定日2週間前の作業開始の通知）
+
+<p>
+  <img src="docs/images/slack-daily-remind.png" width="45%" alt="毎朝のリマインド">
+  <img src="docs/images/slack-start-notice.png" width="45%" alt="作業開始の通知">
+</p>
+
+**文章チェックの結果の例**（Notionのページにコメントとして届く）
+
+![文章チェックの結果](docs/images/ai-check-result.png)
+
 ## 工夫した点
 
 - **進捗管理をNotionに移す**：OneDrive上のExcelからNotionに移し、進捗と原稿を1か所にまとめた。各作業者が自分でステータスを更新し、それをきっかけに通知が届く。
